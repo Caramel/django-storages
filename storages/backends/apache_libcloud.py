@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.files.storage import Storage
 from django.core.files.base import File
 from django.core.exceptions import ImproperlyConfigured
+from urllib import quote
 
 try:
     from cStringIO import StringIO
@@ -134,7 +135,19 @@ class LibCloudStorage(Storage):
         return self.driver.download_object_as_stream(obj, obj.size).next()
 
     def _save(self, name, file):
-        self.driver.upload_object_via_stream(iter(file), self._get_bucket(), name)
+        extra = {}
+        if hasattr(file, 'content_type'):
+            extra['content_type'] = file.content_type
+        
+        if hasattr(file, 'name'):
+            if isinstance(file.name, unicode):
+                # transform unicode values to utf-8 first
+                fn = file.name.encode('utf8')
+            else:
+                fn = file.name
+                
+            extra['content_disposition'] = 'attachment; filename=%s' % quote(fn)
+        self.driver.upload_object_via_stream(iter(file), self._get_bucket(), name, extra)
         return name
 
 
