@@ -139,14 +139,14 @@ class LibCloudStorage(Storage):
         if hasattr(file, 'content_type'):
             extra['content_type'] = file.content_type
         
-        if hasattr(file, 'name'):
-            if isinstance(file.name, unicode):
-                # transform unicode values to utf-8 first
-                fn = file.name.encode('utf8')
-            else:
-                fn = file.name
+        if isinstance(name, unicode):
+            # transform unicode values to utf-8 first
+            fn = name.encode('utf8')
+        else:
+            # is str, assume encoding is correct
+            fn = name
                 
-            extra['content_disposition'] = 'attachment; filename=%s' % quote(fn)
+        extra['content_disposition'] = 'attachment; filename=%s' % quote(fn)
         self.driver.upload_object_via_stream(iter(file), self._get_bucket(), name, extra)
         return name
 
