@@ -139,14 +139,20 @@ class LibCloudStorage(Storage):
         if hasattr(file, 'content_type'):
             extra['content_type'] = file.content_type
         
+        disposition_fn = name
         if hasattr(file, 'name'):
-            if isinstance(file.name, unicode):
-                # transform unicode values to utf-8 first
-                fn = file.name.encode('utf8')
-            else:
-                fn = file.name
-                
-            extra['content_disposition'] = 'attachment; filename=%s' % quote(fn)
+            # django-randomfilenamestorage scrambles the input filename, but
+            # the original filename (which we want to use) is preserved in
+            # file.name.
+            # 
+            # Fall back to using the name parameter if this is not present.
+            disposition_fn = file.name
+            
+        if isinstance(disposition_fn, unicode):
+            # transform unicode values to utf-8 first
+            disposition_fn = disposition_fn.encode('utf8')
+
+        extra['content_disposition'] = 'attachment; filename=%s' % quote(disposition_fn)
         self.driver.upload_object_via_stream(iter(file), self._get_bucket(), name, extra)
         return name
 
